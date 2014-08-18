@@ -5,9 +5,10 @@
 /* are platform dependent.                                               */
 /*-----------------------------------------------------------------------*/
 
-
+#include <stdbool.h>
+#include <stdint.h>
+#include "diskio_spi.h"
 #include "diskio.h"
-
 
 /* Definitions for MMC/SDC command */
 #define CMD0	(0x40+0)	/* GO_IDLE_STATE */
@@ -59,41 +60,15 @@ BYTE CardType;			/* Card type flags */
 
 
 /*-----------------------------------------------------------------------*/
-/* Transmit a byte to MMC via SPI  (Platform dependent)                  */
-/*-----------------------------------------------------------------------*/
-
-#define xmit_spi(dat) 	SPDR=(dat); loop_until_bit_is_set(SPSR,SPIF)
-
-
-
-/*-----------------------------------------------------------------------*/
-/* Receive a byte from MMC via SPI  (Platform dependent)                 */
-/*-----------------------------------------------------------------------*/
-
-static
-BYTE rcvr_spi (void)
-{
-	SPDR = 0xFF;
-	loop_until_bit_is_set(SPSR, SPIF);
-	return SPDR;
-}
-
-/* Alternative macro to receive data fast */
-#define rcvr_spi_m(dst)	SPDR=0xFF; loop_until_bit_is_set(SPSR,SPIF); *(dst)=SPDR
-
-
-
-/*-----------------------------------------------------------------------*/
 /* Wait for card ready                                                   */
 /*-----------------------------------------------------------------------*/
 
-static
-BYTE wait_ready (void)
+static BYTE wait_ready (void)
 {
 	BYTE res;
 
 
-	Timer2 = 50;	/* Wait for ready in timeout of 500ms */
+	delay(500);	/* Wait for ready in timeout of 500ms */
 	rcvr_spi();
 	do
 		res = rcvr_spi();
@@ -102,67 +77,11 @@ BYTE wait_ready (void)
 	return res;
 }
 
-
-
-/*-----------------------------------------------------------------------*/
-/* Deselect the card and release SPI bus                                 */
-/*-----------------------------------------------------------------------*/
-
-static
-void release_spi (void)
-{
-	DESELECT();
-	rcvr_spi();
-}
-
-
-
-/*-----------------------------------------------------------------------*/
-/* Power Control  (Platform dependent)                                   */
-/*-----------------------------------------------------------------------*/
-/* When the target system does not support socket power control, there   */
-/* is nothing to do in these functions and chk_power always returns 1.   */
-
-static
-void power_on (void)
-{
-//	PORTE &= ~0x80;				/* Socket power ON */
-//	for (Timer1 = 3; Timer1; );	/* Wait for 30ms */
-//	PORTB = 0b10110101;			/* Enable drivers */
-//	DDRB  = 0b11000111;
-	SPCR = 0b01010000;			/* Initialize SPI port (Mode 0) */
-	SPSR = 0b00000001;
-}
-
-static
-void power_off (void)
-{
-	SELECT();				/* Wait for card ready */
-	wait_ready();
-	release_spi();
-
-	SPCR = 0;				/* Disable SPI function */
-//	DDRB  = 0b11000000;		/* Disable drivers */
-//	PORTB = 0b10110000;
-//	PORTE |=  0x80;			/* Socket power OFF */
-	Stat |= STA_NOINIT;		/* Set STA_NOINIT */
-}
-
-static
-int chk_power(void)		/* Socket power state: 0=off, 1=on */
-{
-//	return (PORTE & 0x80) ? 0 : 1;
-	return 1;
-}
-
-
-
 /*-----------------------------------------------------------------------*/
 /* Receive a data packet from MMC                                        */
 /*-----------------------------------------------------------------------*/
 
-static
-BOOL rcvr_datablock (
+static bool rcvr_datablock (
 	BYTE *buff,			/* Data buffer to store received data */
 	UINT btr			/* Byte count (must be multiple of 4) */
 )
@@ -174,21 +93,16 @@ BOOL rcvr_datablock (
 	do {							/* Wait for data packet in timeout of 200ms */
 		token = rcvr_spi();
 	} while ((token == 0xFF) && Timer1);
-	if(token != 0xFE) return FALSE;	/* If not valid data token, retutn with error */
+	if(token != 0xFE) return false;	/* If not valid data token, retutn with error */
 
 	do {							/* Receive the data block into buffer */
-		rcvr_spi_m(buff++);
-		rcvr_spi_m(buff++);
-		rcvr_spi_m(buff++);
-		rcvr_spi_m(buff++);
+		rcvr_spi_buf(buff,4);
 	} while (btr -= 4);
 	rcvr_spi();						/* Discard CRC */
 	rcvr_spi();
 
-	return TRUE;					/* Return with success */
+	return true;					/* Return with success */
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Send a data packet to MMC                                             */
@@ -196,7 +110,7 @@ BOOL rcvr_datablock (
 
 #if _READONLY == 0
 static
-BOOL xmit_datablock (
+bool xmit_datablock (
 	const BYTE *buff,	/* 512 byte data block to be transmitted */
 	BYTE token			/* Data/Stop token */
 )
@@ -204,7 +118,7 @@ BOOL xmit_datablock (
 	BYTE resp, wc;
 
 
-	if (wait_ready() != 0xFF) return FALSE;
+	if (wait_ready() != 0xFF) return false;
 
 	xmit_spi(token);					/* Xmit data token */
 	if (token != 0xFD) {	/* Is data token */
@@ -217,10 +131,10 @@ BOOL xmit_datablock (
 		xmit_spi(0xFF);
 		resp = rcvr_spi();				/* Reveive data response */
 		if ((resp & 0x1F) != 0x05)		/* If not accepted, return with error */
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 #endif /* _READONLY */
 
@@ -230,8 +144,7 @@ BOOL xmit_datablock (
 /* Send a command packet to MMC                                          */
 /*-----------------------------------------------------------------------*/
 
-static
-BYTE send_cmd (
+static BYTE send_cmd (
 	BYTE cmd,		/* Command byte */
 	DWORD arg		/* Argument */
 )
@@ -246,9 +159,10 @@ BYTE send_cmd (
 	}
 
 	/* Select the card and wait for ready */
-	DESELECT();
-	SELECT();
-	if (wait_ready() != 0xFF) return 0xFF;
+	CardSelect(false);
+	CardSelect(true);
+	if (wait_ready() != 0xFF)
+		return 0xFF;
 
 	/* Send command packet */
 	xmit_spi(cmd);						/* Start + Command index */
@@ -334,8 +248,6 @@ DSTATUS disk_initialize (
 	return Stat;
 }
 
-
-
 /*-----------------------------------------------------------------------*/
 /* Get Disk Status                                                       */
 /*-----------------------------------------------------------------------*/
@@ -344,7 +256,8 @@ DSTATUS disk_status (
 	BYTE drv		/* Physical drive nmuber (0) */
 )
 {
-	if (drv) return STA_NOINIT;		/* Supports only single drive */
+	if (drv)
+		return STA_NOINIT;		/* Supports only single drive */
 	return Stat;
 }
 
@@ -361,10 +274,14 @@ DRESULT disk_read (
 	BYTE count			/* Sector count (1..255) */
 )
 {
-	if (drv || !count) return RES_PARERR;
-	if (Stat & STA_NOINIT) return RES_NOTRDY;
+	if (drv || !count)
+		return RES_PARERR;
 
-	if (!(CardType & CT_BLOCK)) sector *= 512;	/* Convert to byte address if needed */
+	if (Stat & STA_NOINIT)
+		return RES_NOTRDY;
+
+	if (!(CardType & CT_BLOCK))
+		sector *= 512;	/* Convert to byte address if needed */
 
 	if (count == 1) {	/* Single block read */
 		if ((send_cmd(CMD17, sector) == 0)	/* READ_SINGLE_BLOCK */
@@ -374,7 +291,8 @@ DRESULT disk_read (
 	else {				/* Multiple block read */
 		if (send_cmd(CMD18, sector) == 0) {	/* READ_MULTIPLE_BLOCK */
 			do {
-				if (!rcvr_datablock(buff, 512)) break;
+				if (!rcvr_datablock(buff, 512))
+					break;
 				buff += 512;
 			} while (--count);
 			send_cmd(CMD12, 0);				/* STOP_TRANSMISSION */
@@ -473,7 +391,7 @@ DRESULT disk_ioctl (
 
 		switch (ctrl) {
 		case CTRL_SYNC :		/* Make sure that no pending write process. Do not remove this or written sector might not left updated. */
-			SELECT();
+			CardSelect(true);
 			if (wait_ready() == 0xFF)
 				res = RES_OK;
 			break;
@@ -562,6 +480,9 @@ DRESULT disk_ioctl (
 }
 #endif /* _USE_IOCTL != 0 */
 
+int get_fattime(void) {
+	return 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /* Device Timer Interrupt Procedure  (Platform dependent)                */

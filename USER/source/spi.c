@@ -1,13 +1,8 @@
-#include "spi.h"
-
 #include <STM32F10X_SPI.h>
 #include <STM32F10X_GPIO.h>
 #include <STM32F10X_RCC.h>
-
-
+#include <spi.h>
 					  
-//串行外设接口SPI的初始化，SPI配置成主模式							  
-//本例程选用SPI1对W25X16进行读写操作，对SPI1进行初始化
 void SPIx_Init(void)
 {
 	SPI_InitTypeDef  SPI_InitStructure;
