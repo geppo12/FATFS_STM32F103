@@ -17,8 +17,10 @@ void rcvr_spi_buf(uint8_t *buff, uint32_t size);
 // alias
 void delay(uint32_t ms);
 void release_spi(void);
-void power_on(void);
-void power_off(void);
+void PowerOn(void);
+void PowerOff(void);
+void select(void);
+void deselect(void);
 int chk_power(void);
 
 #define CardSelect(onOff)	do {} while(0)

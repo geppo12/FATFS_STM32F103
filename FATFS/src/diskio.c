@@ -29,19 +29,16 @@
 #define CMD55	(0x40+55)	/* APP_CMD */
 #define CMD58	(0x40+58)	/* READ_OCR */
 
-#if 0
-/* Port Controls  (Platform dependent) */
-#define SELECT()	PORTB &= ~(1<<PB2)		/* MMC CS = L */
-#define	DESELECT()	PORTB |= (1<<PB2)		/* MMC CS = H */
-#endif
+/* alias */
+#define SELECT		select()
+#define	DESELECT	deselect()
 
-//#define SOCKPORT	PINB			/* Socket contact port */
-//#define SOCKWP		0x20			/* Write protect switch (PB5) */
-//#define SOCKINS		0x10			/* Card detect switch (PB4) */
-
+// hook for fast spiS
 #define	FCLK_SLOW()					/* Set slow clock (100k-400k) */
 #define	FCLK_FAST()					/* Set fast clock (depends on the CSD) */
 
+#define power_on	PowerOn
+#define power_off()   do { PowerOff(); Stat = STA_NOINIT; } while(0)
 
 /*--------------------------------------------------------------------------
 

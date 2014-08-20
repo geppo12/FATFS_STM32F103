@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <USER/interface/spi.h>
+#include "diskio_spi.h"
 
 void xmit_spi(uint8_t dato) {
 	SPIx_ReadWriteByte(dato);
@@ -32,12 +33,21 @@ void release_spi(void) {
 
 }
 
-void power_on(void) {
-
+void PowerOn(void) {
+	SPIx_Init();
+	select();
 }
 
-void power_off(void) {
+void PowerOff(void) {
+	deselect();
+}
 
+void select(void) {
+	GPIO_SetBits(GPIOA,GPIO_Pin_4);
+}
+
+void deselect(void) {
+	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
 }
 
 int chk_power(void) {
