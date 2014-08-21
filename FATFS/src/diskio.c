@@ -156,8 +156,8 @@ static BYTE send_cmd (
 	}
 
 	/* Select the card and wait for ready */
-	CardSelect(false);
-	CardSelect(true);
+	deselect();
+	select();
 	if (wait_ready() != 0xFF)
 		return 0xFF;
 

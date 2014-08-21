@@ -35,7 +35,7 @@ void release_spi(void) {
 
 void PowerOn(void) {
 	SPIx_Init();
-	select();
+	deselect();
 }
 
 void PowerOff(void) {
@@ -43,11 +43,11 @@ void PowerOff(void) {
 }
 
 void select(void) {
-	GPIO_SetBits(GPIOA,GPIO_Pin_4);
+	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
 }
 
 void deselect(void) {
-	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
+	GPIO_SetBits(GPIOA,GPIO_Pin_4);
 }
 
 int chk_power(void) {
