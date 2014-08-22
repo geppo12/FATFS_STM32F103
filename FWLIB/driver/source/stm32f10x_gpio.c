@@ -199,6 +199,36 @@ void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
       currentpin = (GPIO_InitStruct->GPIO_Pin) & pos;
       if (currentpin == pos)
       {
+        switch(GPIO_InitStruct->GPIO_Mode) {
+        	case GPIO_Mode_IPD:
+                GPIOx->BRR = (((uint32_t)0x01) << pinpos);
+                break;
+
+        	case GPIO_Mode_IPU:
+                GPIOx->BSRR = (((uint32_t)0x01) << pinpos);
+                break;
+
+        	case GPIO_Mode_AF_OD:
+        		if (currentmode != 0)
+        			currentmode |= 4;
+        		break;
+
+
+        	case GPIO_Mode_AF_PP:
+        		if (currentmode != 0)
+        			currentmode |= 8;
+        		break;
+
+        	case GPIO_Mode_Out_OD:
+        		if (currentmode != 0)
+        			currentmode |= 12;
+        		break;
+
+        	case GPIO_Mode_Out_PP:
+        		if (currentmode != 0)
+        			currentmode |= 0;
+        		break;
+        }
         pos = pinpos << 2;
         /* Clear the corresponding low control register bits */
         pinmask = ((uint32_t)0x0F) << pos;
@@ -206,18 +236,6 @@ void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
         /* Write the mode configuration in the corresponding bits */
         tmpreg |= (currentmode << pos);
         /* Reset the corresponding ODR bit */
-        if (GPIO_InitStruct->GPIO_Mode == GPIO_Mode_IPD)
-        {
-          GPIOx->BRR = (((uint32_t)0x01) << pinpos);
-        }
-        else
-        {
-          /* Set the corresponding ODR bit */
-          if (GPIO_InitStruct->GPIO_Mode == GPIO_Mode_IPU)
-          {
-            GPIOx->BSRR = (((uint32_t)0x01) << pinpos);
-          }
-        }
       }
     }
     GPIOx->CRL = tmpreg;
