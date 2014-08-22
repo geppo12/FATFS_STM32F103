@@ -5,7 +5,6 @@
  *      Author: Geppo
  */
 
-
 #include <stdint.h>
 #include <USER/interface/spi.h>
 #include "diskio_spi.h"
@@ -24,11 +23,6 @@ void rcvr_spi_buf(uint8_t *buff, uint32_t size) {
 	}
 }
 
-// alias
-void delay(uint32_t ms) {
-
-}
-
 void release_spi(void) {
 
 }
@@ -43,11 +37,11 @@ void PowerOff(void) {
 }
 
 void select(void) {
-	GPIO_ResetBits(GPIOA,GPIO_Pin_4);
+	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
 }
 
 void deselect(void) {
-	GPIO_SetBits(GPIOA,GPIO_Pin_4);
+	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 }
 
 int chk_power(void) {

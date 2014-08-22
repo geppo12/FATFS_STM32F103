@@ -5,8 +5,8 @@
 /* are platform dependent.                                               */
 /*-----------------------------------------------------------------------*/
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <delay.h>
 #include "diskio_spi.h"
 #include "diskio.h"
 

@@ -15,7 +15,6 @@ uint8_t rcvr_spi(void);
 void rcvr_spi_buf(uint8_t *buff, uint32_t size);
 
 // alias
-void delay(uint32_t ms);
 void release_spi(void);
 void PowerOn(void);
 void PowerOff(void);

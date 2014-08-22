@@ -6,6 +6,9 @@ void delay_init(u8 SYSCLK);
 void delay_ms(u16 nms);
 void delay_us(u32 nus);
 void Delay(vu32 nCount);
+
+// alias
+#define delay delay_ms
 #endif
 
 
