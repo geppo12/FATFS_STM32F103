@@ -65,7 +65,8 @@ static BYTE wait_ready (void)
 	BYTE res;
 
 
-	delay(500);	/* Wait for ready in timeout of 500ms */
+	//delay(500);	/* Wait for ready in timeout of 500ms */
+	delay(1);
 	rcvr_spi();
 	do
 		res = rcvr_spi();
