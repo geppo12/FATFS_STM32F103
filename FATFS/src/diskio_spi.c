@@ -20,11 +20,12 @@ uint8_t rcvr_spi(void) {
 void rcvr_spi_buf(uint8_t *buff, uint32_t size) {
 	while (size > 0) {
 		*buff++ = SPIx_ReadWriteByte(0xFF);
+		size--;
 	}
 }
 
 void release_spi(void) {
-
+	deselect();
 }
 
 void PowerOn(void) {
