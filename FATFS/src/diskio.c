@@ -60,17 +60,18 @@ BYTE CardType;			/* Card type flags */
 /* Wait for card ready                                                   */
 /*-----------------------------------------------------------------------*/
 
-static BYTE wait_ready (void)
+static BYTE wait_ready (uint32_t ms)
 {
-	BYTE res;
-
-
-	//delay(500);	/* Wait for ready in timeout of 500ms */
-	delay(1);
-	rcvr_spi();
-	do
+	BYTE res,count = 0;
+	do {
+		delay(1);
 		res = rcvr_spi();
-	while ((res != 0xFF) && Timer2);
+		count++;
+	} while ((res != 0xFF) && count < 100);
+
+	// #debug
+	if (res != 0xFF)
+		deselect();
 
 	return res;
 }
@@ -116,7 +117,8 @@ bool xmit_datablock (
 	BYTE resp, wc;
 
 
-	if (wait_ready() != 0xFF) return false;
+	if (wait_ready(20) != 0xFF)
+		return false;
 
 	xmit_spi(token);					/* Xmit data token */
 	if (token != 0xFD) {	/* Is data token */
@@ -159,7 +161,7 @@ static BYTE send_cmd (
 	/* Select the card and wait for ready */
 	deselect();
 	select();
-	if (wait_ready() != 0xFF)
+	if (wait_ready(1) != 0xFF)
 		return 0xFF;
 
 	/* Send command packet */
@@ -323,8 +325,9 @@ DRESULT disk_write (
 
 	if (count == 1) {	/* Single block write */
 		if ((send_cmd(CMD24, sector) == 0)	/* WRITE_BLOCK */
-			&& xmit_datablock(buff, 0xFE))
-			count = 0;
+			&& xmit_datablock(buff, 0xFE)) {
+		    count = 0;
+		}
 	}
 	else {				/* Multiple block write */
 		if (CardType & CT_SDC) send_cmd(ACMD23, count);
@@ -390,7 +393,7 @@ DRESULT disk_ioctl (
 		switch (ctrl) {
 		case CTRL_SYNC :		/* Make sure that no pending write process. Do not remove this or written sector might not left updated. */
 			CardSelect(true);
-			if (wait_ready() == 0xFF)
+			if (wait_ready(1) == 0xFF)
 				res = RES_OK;
 			break;
 
