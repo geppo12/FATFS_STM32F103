@@ -1,14 +1,17 @@
 #ifndef __DELAY_H
 #define __DELAY_H 			   
 #include <stm32f10x.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-void delay_init(u8 SYSCLK);
-void delay_ms(u16 nms);
-void delay_us(u32 nus);
-void Delay(vu32 nCount);
+typedef uint64_t Timer_t;
 
-// alias
-#define delay delay_ms
+void delay_init(uint8_t SYSCLK);
+void setTimer(Timer_t *timer, uint32_t timeout);
+// when expired return false
+// TODO meglio invertire i valori di ritorno ?
+bool checkTimer(Timer_t *timer);
+
 #endif
 
 

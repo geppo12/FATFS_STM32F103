@@ -1,49 +1,43 @@
+// TODO cambiare nome in timer
 #include <stm32f10x.h>
 #include "delay.h"
 
-static u8  fac_us=0;
-static u16 fac_ms=0;
-void delay_init(u8 SYSCLK)
-{
-	SysTick->CTRL&=0xfffffffb; // HCLK / 8
-	fac_us=SYSCLK/8;		    
-	fac_ms=(u16)fac_us*1000;
-}								    
-void delay_ms(u16 nms)
-{	 		  	  
-	u32 temp;		   
-	SysTick->LOAD=(u32)nms*fac_ms;
-	SysTick->VAL =0x00;
-	SysTick->CTRL=0x01 ;
-	do
-	{
-		temp=SysTick->CTRL;
-	}
-	while(temp&0x01&&!(temp&(1<<16)));
-	SysTick->CTRL=0x00;
-	SysTick->VAL =0X00;
-}   
+static uint64_t sSysTicks = 0;
 
-void delay_us(u32 nus)
-{		
-	u32 temp;	    	 
-	SysTick->LOAD=nus*fac_us;
-	SysTick->VAL=0x00;
-	SysTick->CTRL=0x01 ;
-	do
-	{
-		temp=SysTick->CTRL;
-	}
-	while(temp&0x01&&!(temp&(1<<16)));
-	SysTick->CTRL=0x00;
-	SysTick->VAL =0X00;
+void SysTickIrq(void) {
+	sSysTicks++;
 }
-#if 0
-void Delay(vu32 nCount)
+
+void delay_init(uint8_t SYSCLK)
 {
-  for(; nCount != 0; nCount--);
+	SysTick->CTRL &= 0xfffffffb;
+	SysTick->LOAD=(uint32_t)SYSCLK*1000;
+	SysTick->VAL =0x00;
+	SysTick->CTRL=0x07 ;		// enable processor clock (bit2) irq (bit1) and timer (bit0)
 }
-#endif
+
+void setTimer(Timer_t *timer, uint32_t timeout) {
+	*(uint64_t *)timer = sSysTicks + timeout;
+}
+
+bool checkTimer(Timer_t *timer) {
+	bool retVal = false;
+		if (*((uint64_t *)timer) - sSysTicks > 0) {
+			retVal = true;
+	// ~0 short than = 0xFFFFF..... 64bit interger
+	if (*((uint64_t *)timer) != ~0) {
+		} else {
+			*((uint64_t *)timer) = ~0;
+		}
+	}
+	return retVal;
+}
+void delay(uint32_t nms)
+{
+	Timer_t t;
+	setTimer(&t,nms);
+	while (!checkTimer(&t));
+}
 
 
 
