@@ -60,15 +60,12 @@ BYTE CardType;			/* Card type flags */
 static BYTE wait_ready (uint32_t ms)
 {
 	BYTE res,count = 0;
-	do {
-		delay(1);
-		res = rcvr_spi();
-		count++;
-	} while ((res != 0xFF) && count < 100);
+	Timer_t t;
 
-	// #debug
-	if (res != 0xFF)
-		deselect();
+	setTimer(&t,500);
+	do {
+		res = rcvr_spi();
+	} while ((res != 0xFF) && checkTimer(&t));
 
 	return res;
 }
@@ -209,24 +206,24 @@ DSTATUS disk_initialize (
 
 	ty = 0;
 	if (send_cmd(CMD0, 0) == 1) {										/* Enter Idle state */
-		setTimer(&t,100);
-		if (send_cmd(CMD8, 0x1AA) == 1) {								/* SDHC */
-			for (n = 0; n < 4; n++)
-				ocr[n] = rcvr_spi();									/* Get trailing return value of R7 resp */
-			if (ocr[2] == 0x01 && ocr[3] == 0xAA) {						/* The card can work at vdd range of 2.7-3.6V */
-				while (checkTimer(&t) && send_cmd(ACMD41, 1UL << 30));	/* Wait for leaving idle state (ACMD41 with HCS bit) */
-				if (checkTimer(&t) && send_cmd(CMD58, 0) == 0) {		/* Check CCS bit in the OCR */
-					for (n = 0; n < 4; n++)
-						ocr[n] = rcvr_spi();
-					ty = (ocr[0] & 0x40) ? CT_SD2 | CT_BLOCK : CT_SD2;	/* SDv2 */
+			setTimer(&t,100);
+			if (send_cmd(CMD8, 0x1AA) == 1) {								/* SDHC */
+				for (n = 0; n < 4; n++)
+					ocr[n] = rcvr_spi();									/* Get trailing return value of R7 resp */
+				if (ocr[2] == 0x01 && ocr[3] == 0xAA) {						/* The card can work at vdd range of 2.7-3.6V */
+					while (checkTimer(&t) && send_cmd(ACMD41, 1UL << 30));	/* Wait for leaving idle state (ACMD41 with HCS bit) */
+					if (checkTimer(&t) && send_cmd(CMD58, 0) == 0) {		/* Check CCS bit in the OCR */
+						for (n = 0; n < 4; n++)
+							ocr[n] = rcvr_spi();
+						ty = (ocr[0] & 0x40) ? CT_SD2 | CT_BLOCK : CT_SD2;	/* SDv2 */
+					}
 				}
-			}
-		} else {														/* SDSC or MMC */
-			if (send_cmd(ACMD41, 0) <= 1) 	{
-				ty = CT_SD1; cmd = ACMD41;								/* SDv1 */
-			} else {
-				ty = CT_MMC; cmd = CMD1;								/* MMCv3 */
-			}
+			} else {														/* SDSC or MMC */
+				if (send_cmd(ACMD41, 0) <= 1) 	{
+					ty = CT_SD1; cmd = ACMD41;								/* SDv1 */
+				} else {
+					ty = CT_MMC; cmd = CMD1;								/* MMCv3 */
+				}
 			while (checkTimer(&t) && send_cmd(cmd, 0));				/* Wait for leaving idle state */
 			if (!checkTimer(&t) || send_cmd(CMD16, 512) != 0)			/* Set R/W block length to 512 */
 				ty = 0;
