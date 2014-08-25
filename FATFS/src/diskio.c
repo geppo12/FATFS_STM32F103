@@ -91,9 +91,7 @@ static bool rcvr_datablock (
 	} while ((token == 0xFF) && checkTimer(&t));
 	if(token != 0xFE) return false;	/* If not valid data token, retutn with error */
 
-	do {							/* Receive the data block into buffer */
-		rcvr_spi_buf(buff,4);
-	} while (btr -= 4);
+	rcvr_spi_buf(buff,btr);
 	rcvr_spi();						/* Discard CRC */
 	rcvr_spi();
 
