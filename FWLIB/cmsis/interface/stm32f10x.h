@@ -451,7 +451,10 @@ typedef __I uint16_t vuc16;  /*!< Read Only */
 typedef __I uint8_t vuc8;   /*!< Read Only */
 
 #ifndef __cplusplus
+// GM fix to supprot ANSI 'stdbool.h'
+#ifndef _STDBOOL_H
 typedef enum {FALSE = 0, TRUE = !FALSE} bool;
+#endif
 #endif
 
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
