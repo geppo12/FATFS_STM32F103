@@ -1,6 +1,6 @@
 // TODO cambiare nome in timer
 #include <stm32f10x.h>
-#include "delay.h"
+#include <tickTimer.h>
 
 static uint64_t sSysTicks = 0;
 
@@ -8,12 +8,16 @@ void SysTickIrq(void) {
 	sSysTicks++;
 }
 
-void delay_init(uint8_t SYSCLK)
+void timerInit(uint8_t SYSCLK)
 {
 	SysTick->CTRL &= 0xfffffffb;
 	SysTick->LOAD=(uint32_t)SYSCLK*1000;
 	SysTick->VAL =0x00;
 	SysTick->CTRL=0x07 ;		// enable processor clock (bit2) irq (bit1) and timer (bit0)
+}
+
+void timerDeinit(void) {
+	SysTick->CTRL=0x00;			// stop hardware tick timer
 }
 
 void setTimer(Timer_t *timer, uint32_t timeout) {

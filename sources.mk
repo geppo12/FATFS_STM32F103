@@ -7,5 +7,5 @@ SRCS += FWLIB\driver\source\stm32f10x_gpio.c
 SRCS += FWLIB\driver\source\stm32f10x_rcc.c
 SRCS += FWLIB\driver\source\stm32f10x_flash.c
 SRCS += USER\source\spi.c
-SRCS += USER\source\delay.c
+SRCS += USER\source\tickTimer.c
 

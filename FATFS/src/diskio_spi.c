@@ -6,7 +6,7 @@
 /*-----------------------------------------------------------------------*/
 
 #include <stdint.h>
-#include <delay.h>
+#include <tickTimer.h>
 #include "spi_hal.h"
 #include "diskio_spi.h"
 

@@ -6,7 +6,9 @@
 
 typedef uint64_t Timer_t;
 
-void delay_init(uint8_t SYSCLK);
+
+void timerInit(uint8_t SYSCLK);
+void timerDeinit(void);
 void setTimer(Timer_t *timer, uint32_t timeout);
 // when expired return false
 // TODO meglio invertire i valori di ritorno ?
