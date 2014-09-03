@@ -56,7 +56,7 @@ BYTE CardType;			/* Card type flags */
 /*-----------------------------------------------------------------------*/
 /* Wait for card ready                                                   */
 /*-----------------------------------------------------------------------*/
-
+// TODO : rimuovre ms (verificare chiamanti)
 static BYTE wait_ready (uint32_t ms)
 {
 	BYTE res,count = 0;
@@ -73,7 +73,6 @@ static BYTE wait_ready (uint32_t ms)
 /*-----------------------------------------------------------------------*/
 /* Receive a data packet from MMC                                        */
 /*-----------------------------------------------------------------------*/
-
 static bool rcvr_datablock (
 	BYTE *buff,			/* Data buffer to store received data */
 	UINT btr			/* Byte count (must be multiple of 4) */
@@ -82,11 +81,13 @@ static bool rcvr_datablock (
 	BYTE token;
 	Timer_t t;
 
-	setTimer(&t,20);
+	setTimer(&t,200);
 	do {							/* Wait for data packet in timeout of 200ms */
 		token = rcvr_spi();
 	} while ((token == 0xFF) && checkTimer(&t));
-	if(token != 0xFE) return false;	/* If not valid data token, retutn with error */
+	
+	if(token != 0xFE) 
+		return false;				/* If not valid data token, retutn with error */
 
 	rcvr_spi_buf(buff,btr);
 	rcvr_spi();						/* Discard CRC */
@@ -153,8 +154,10 @@ static BYTE send_cmd (
 	/* Select the card and wait for ready */
 	deselect();
 	select();
-	if (wait_ready(1) != 0xFF)
+	if (wait_ready(1) != 0xFF) {
+		deselect();
 		return 0xFF;
+	}
 
 	/* Send command packet */
 	xmit_spi(cmd);						/* Start + Command index */
