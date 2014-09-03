@@ -56,10 +56,9 @@ BYTE CardType;			/* Card type flags */
 /*-----------------------------------------------------------------------*/
 /* Wait for card ready                                                   */
 /*-----------------------------------------------------------------------*/
-// TODO : rimuovre ms (verificare chiamanti)
-static BYTE wait_ready (uint32_t ms)
+static BYTE wait_ready (void)
 {
-	BYTE res,count = 0;
+	BYTE res;
 	Timer_t t;
 
 	setTimer(&t,500);
@@ -110,7 +109,7 @@ bool xmit_datablock (
 	BYTE resp, wc;
 
 
-	if (wait_ready(20) != 0xFF)
+	if (wait_ready() != 0xFF)
 		return false;
 
 	xmit_spi(token);					/* Xmit data token */
@@ -154,7 +153,7 @@ static BYTE send_cmd (
 	/* Select the card and wait for ready */
 	deselect();
 	select();
-	if (wait_ready(1) != 0xFF) {
+	if (wait_ready() != 0xFF) {
 		deselect();
 		return 0xFF;
 	}
@@ -390,7 +389,7 @@ DRESULT disk_ioctl (
 		switch (ctrl) {
 		case CTRL_SYNC :		/* Make sure that no pending write process. Do not remove this or written sector might not left updated. */
 			CardSelect(true);
-			if (wait_ready(1) == 0xFF)
+			if (wait_ready() == 0xFF)
 				res = RES_OK;
 			break;
 
